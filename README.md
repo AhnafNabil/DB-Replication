@@ -482,12 +482,11 @@ docker-compose ps
 
 **Expected Output:**
 ```
-Name                                   Command               State                    Ports
-----------------------------------------------------------------------------------------------------
-proxysql-mysql-replication-master     docker-entrypoint.sh mysqld  Up      0.0.0.0:3306->3306/tcp
-proxysql-mysql-replication-proxysql   proxysql -c /etc/proxysql.cnf Up      0.0.0.0:6032->6032/tcp, 0.0.0.0:6033->6033/tcp
-proxysql-mysql-replication-slave1     docker-entrypoint.sh mysqld  Up      0.0.0.0:3307->3306/tcp
-proxysql-mysql-replication-slave2     docker-entrypoint.sh mysqld  Up      0.0.0.0:3308->3306/tcp
+NAME                                  IMAGE                      COMMAND                  SERVICE             CREATED             STATUS                             PORTS
+proxysql-mysql-replication-master     mysql:5.7                  "docker-entrypoint.s…"   mysql-master        39 seconds ago      Up 37 seconds (healthy)            0.0.0.0:3306->3306/tcp, :::3306->3306/tcp, 33060/tcp
+proxysql-mysql-replication-proxysql   proxysql/proxysql:2.0.12   "proxysql -f -D /var…"   proxysql            38 seconds ago      Up 36 seconds (health: starting)   0.0.0.0:6032-6033->6032-6033/tcp, :::6032-6033->6032-6033/tcp
+proxysql-mysql-replication-slave1     mysql:5.7                  "docker-entrypoint.s…"   mysql-slave1        38 seconds ago      Up 36 seconds (healthy)            33060/tcp, 0.0.0.0:3307->3306/tcp, :::3307->3306/tcp
+proxysql-mysql-replication-slave2     mysql:5.7                  "docker-entrypoint.s…"   mysql-slave2        38 seconds ago      Up 36 seconds (healthy)            33060/tcp, 0.0.0.0:3308->3306/tcp, :::3308->3306/tcp
 ```
 
 ### 6.2 Monitor Startup Process
@@ -514,10 +513,10 @@ docker-compose exec mysql-master sh -c "export MYSQL_PWD=password; mysql -u root
 ```
 *************************** 1. row ***************************
              File: mysql-bin.000003
-         Position: 154
+         Position: 194
      Binlog_Do_DB: sbtest
  Binlog_Ignore_DB: 
-Executed_Gtid_Set: 12345678-1234-1234-1234-123456789012:1-5
+Executed_Gtid_Set: 2b5c39bb-58d6-11f0-b1a8-0242ac120002:1-9
 ```
 
 ### 7.2 Check Slave Status
@@ -526,6 +525,21 @@ Verify that both slaves are replicating correctly.
 **Check Slave 1**
 ```bash
 docker-compose exec mysql-slave1 sh -c "export MYSQL_PWD=password; mysql -u root sbtest -e 'SHOW SLAVE STATUS\G'"
+```
+
+**Expected Output:**
+```
+*************************** 1. row ***************************
+             Master_Host: mysql-master
+             Master_User: slave_user
+         Master_Log_File: mysql-bin.000003
+     Read_Master_Log_Pos: 194
+        Slave_IO_Running: Yes
+       Slave_SQL_Running: Yes
+    Seconds_Behind_Master: 0
+            Master_UUID: 2b5c39bb-58d6-11f0-b1a8-0242ac120002
+       Master_Info_File: /var/lib/mysql/master.info
+      Executed_Gtid_Set: 2b5c39bb-58d6-11f0-b1a8-0242ac120002:1-9
 ```
 
 **Check Slave 2**
@@ -562,9 +576,10 @@ mysql -h 0.0.0.0 -P 6032 -u admin2 -ppass2 -e 'SELECT * FROM mysql_servers;'
 +--------------+--------------+------+-----------+--------+--------+-------------+-----------------+---------------------+---------+----------------+---------+
 | hostgroup_id | hostname     | port | gtid_port | status | weight | compression | max_connections | max_replication_lag | use_ssl | max_latency_ms | comment |
 +--------------+--------------+------+-----------+--------+--------+-------------+-----------------+---------------------+---------+----------------+---------+
-| 10           | mysql-master | 3306 | 0         | ONLINE | 1      | 0           | 100             | 5                   | 0       | 0              |         |
 | 20           | mysql-slave1 | 3306 | 0         | ONLINE | 1      | 0           | 100             | 5                   | 0       | 0              |         |
+| 10           | mysql-master | 3306 | 0         | ONLINE | 1      | 0           | 100             | 5                   | 0       | 0              |         |
 | 20           | mysql-slave2 | 3306 | 0         | ONLINE | 1      | 0           | 100             | 5                   | 0       | 0              |         |
+| 20           | mysql-master | 3306 | 0         | ONLINE | 1      | 0           | 100             | 5                   | 0       | 0              |         |
 +--------------+--------------+------+-----------+--------+--------+-------------+-----------------+---------------------+---------+----------------+---------+
 ```
 
