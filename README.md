@@ -4,6 +4,8 @@ This lab provides a step-by-step guide to creating a production-ready MySQL repl
 
 ## Task Overview
 
+![alt text](./images/db-replica.svg)
+
 **In this hands-on lab, you will:**
 - Create a project structure for configuration files.
 - Configure a MySQL master server to handle write operations.
